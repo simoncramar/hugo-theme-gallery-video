@@ -1,5 +1,6 @@
+{{ $galleryId := .Scratch.Get "galleryId" | default "gallery" }}
 <section class="gallery">
-  <div id="gallery" style="visibility: hidden; height: 1px; overflow: hidden">
+  <div id="{{ $galleryId }}" class="gallery-grid gallery-grid--pending">
     {{ $images := slice }}
     {{ $videos := slice }}
 
@@ -93,7 +94,7 @@
           {{ $height := .Params.height | default 800 }}
           <a class="gallery-item" href="{{ .URL }}" data-target="{{ .Name | urlize }}" title="{{ .Title }}" itemscope itemtype="https://schema.org/ImageObject" style="aspect-ratio: {{ $width }} / {{ $height }}">
             <figure style="background-color: #e0e0e0; aspect-ratio: {{ $width }} / {{ $height }}">
-              <img class="lazyload" width="{{ $width }}" height="{{ $height }}" data-src="{{ .URL }}" alt="{{ .Title }}" style="width: 100%; height: 100%; object-fit: cover;" />
+              <img class="lazyload gallery-item__media" width="{{ $width }}" height="{{ $height }}" data-src="{{ .URL }}" alt="{{ .Title }}" />
             </figure>
             <meta itemprop="contentUrl" content="{{ .URL }}" />
             {{ with site.Params.Author }}
@@ -106,7 +107,8 @@
       {{ else if eq .Type "video" }}
         {{/* Render video item with thumbnail */}}
         {{ $thumbnailUrl := "" }}
-        {{ $videoUrl := .URL }}
+        {{ $youtubeId := "" }}
+        {{ $videoUrl := trim .URL " " }}
 
         {{/* Use manual thumbnail from front matter if provided */}}
         {{ with .Params.thumbnail }}
@@ -114,20 +116,20 @@
         {{ else }}
           {{/* Extract YouTube video ID and generate thumbnail */}}
           {{ if or (in $videoUrl "youtube.com") (in $videoUrl "youtu.be") }}
-            {{ $videoId := "" }}
             {{ if in $videoUrl "youtube.com/watch?v=" }}
-              {{ $videoId = replaceRE ".*[?&]v=([^&]+).*" "$1" $videoUrl }}
+              {{ $youtubeId = trim (replaceRE ".*[?&]v=([^&]+).*" "$1" $videoUrl) " " }}
             {{ else if in $videoUrl "youtu.be/" }}
-              {{ $videoId = replaceRE ".*youtu\\.be/([^?]+).*" "$1" $videoUrl }}
+              {{ $youtubeId = trim (replaceRE ".*youtu\\.be/([^?]+).*" "$1" $videoUrl) " " }}
             {{ end }}
-            {{ if $videoId }}
-              {{ $thumbnailUrl = printf "https://img.youtube.com/vi/%s/hqdefault.jpg" $videoId }}
+            {{ if $youtubeId }}
+              {{/* Prefer maxres (true 16:9); JS falls back to hqdefault if missing */}}
+              {{ $thumbnailUrl = printf "https://img.youtube.com/vi/%s/maxresdefault.jpg" $youtubeId }}
             {{ end }}
           {{/* Extract Vimeo video ID and generate thumbnail */}}
           {{ else if in $videoUrl "vimeo.com" }}
-            {{ $videoId := replaceRE ".*vimeo\\.com/(\\d+).*" "$1" $videoUrl }}
-            {{ if $videoId }}
-              {{ $thumbnailUrl = printf "https://vumbnail.com/%s.jpg" $videoId }}
+            {{ $vimeoId := replaceRE `.*\/([0-9]+)\/?$` `$1` $videoUrl }}
+            {{ if $vimeoId }}
+              {{ $thumbnailUrl = printf "https://vumbnail.com/%s.jpg" $vimeoId }}
             {{ end }}
           {{ end }}
         {{ end }}
@@ -135,27 +137,44 @@
         {{ if .Iframe }}
         {{/* Iframe video (e.g. Facebook) — glightbox inline slide */}}
         {{ $inlineId := printf "glightbox-iframe-%s" (.Name | urlize) }}
-        <div id="{{ $inlineId }}" class="glightbox-iframe-content" style="display: none;">
+        <div id="{{ $inlineId }}" class="glightbox-iframe-content">
           {{ .Iframe | safeHTML }}
         </div>
-        <a class="gallery-item" href="#{{ $inlineId }}" data-width="90vw" data-height="50.625vw" data-target="{{ .Name | urlize }}" title="{{ .Title }}" style="aspect-ratio: 16 / 9">
+        <a class="gallery-item gallery-item--video" href="#{{ $inlineId }}" data-width="90vw" data-height="50.625vw" data-target="{{ .Name | urlize }}" title="{{ .Title }}">
         {{ else }}
-        <a class="gallery-item" href="{{ $videoUrl }}" data-target="{{ .Name | urlize }}" title="{{ .Title }}"{{ with $thumbnailUrl }} data-poster="{{ . }}"{{ end }} style="aspect-ratio: 16 / 9">
+        <a class="gallery-item gallery-item--video" href="{{ $videoUrl }}" data-target="{{ .Name | urlize }}" title="{{ .Title }}"{{ with $thumbnailUrl }} data-poster="{{ . }}"{{ end }}>
         {{ end }}
-          <figure style="background-color: #000; aspect-ratio: 16 / 9; position: relative; overflow: hidden;">
+          <figure class="gallery-item__figure--video">
             {{ if $thumbnailUrl }}
-              <img class="lazyload" width="1280" height="720" data-src="{{ $thumbnailUrl }}" alt="{{ .Title }}" style="width: 100%; height: 100%; object-fit: cover;" />
-              <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.6); border-radius: 50%; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
+              <img
+                class="lazyload gallery-item__media"
+                width="1280"
+                height="720"
+                data-src="{{ $thumbnailUrl }}"
+                {{ with $youtubeId }}
+                  data-yt-id="{{ . }}"
+                  data-thumb-fallback="https://img.youtube.com/vi/{{ . }}/hqdefault.jpg"
+                {{ end }}
+                alt="{{ .Title }}"
+              />
+              <div class="gallery-item__play">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="white">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
               </div>
             {{ else }}
-              <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
+              <div class="gallery-item__placeholder">
                 <svg width="80" height="80" viewBox="0 0 24 24" fill="white" opacity="0.8">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
               </div>
+            {{ end }}
+            {{ with .Params.tags }}
+              <ul class="gallery-item__tags">
+                {{ range . }}
+                  <li class="gallery-item__tag">{{ . }}</li>
+                {{ end }}
+              </ul>
             {{ end }}
           </figure>
         </a>

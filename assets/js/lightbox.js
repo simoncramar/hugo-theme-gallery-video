@@ -1,9 +1,8 @@
 import GLightbox from "./glightbox/glightbox.min.js";
-import * as params from "@params";
 
-const gallery = document.getElementById("gallery");
+const galleries = document.querySelectorAll(".gallery-grid");
 
-if (gallery) {
+if (galleries.length) {
   const lightbox = GLightbox({
     selector: ".gallery-item",
     touchNavigation: true,
@@ -18,12 +17,13 @@ if (gallery) {
     },
   });
 
+  const allItems = document.querySelectorAll("a.gallery-item");
+
   // Handle URL hash for direct image links
   if (window.location.hash.substring(1).length > 1) {
     const target = window.location.hash.substring(1);
-    const items = gallery.querySelectorAll("a.gallery-item");
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].dataset["target"] === target) {
+    for (let i = 0; i < allItems.length; i++) {
+      if (allItems[i].dataset["target"] === target) {
         lightbox.openAt(i);
         break;
       }
@@ -38,7 +38,7 @@ if (gallery) {
         iframe.src = "";
       }
     }
-    const element = gallery.querySelectorAll("a.gallery-item")[current.index];
+    const element = allItems[current.index];
     if (element && element.dataset["target"]) {
       history.replaceState("", document.title, "#" + element.dataset["target"]);
     }

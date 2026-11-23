@@ -1,5 +1,6 @@
 {{ with site.Menus.main }}
-  <menu class="hidden{{ with $.menuClass }} {{ . }}{{ end }}" id="menu">
+  <div class="menu-backdrop" id="menu-backdrop" hidden></div>
+  <menu id="menu" aria-hidden="true">
     {{ range . }}
       <li itemscope itemtype="http://www.schema.org/SiteNavigationElement">
         <a aria-current="{{ or (page.IsMenuCurrent .Menu .) (page.HasMenuCurrent .Menu .) }}" href="{{ .URL }}" itemprop="url">

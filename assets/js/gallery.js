@@ -1,9 +1,7 @@
 import justifiedLayout from "./justified-layout.js";
 import * as params from "@params";
 
-const gallery = document.getElementById("gallery");
-
-if (gallery) {
+const initGallery = (gallery) => {
   let containerWidth = 0;
   const items = gallery.querySelectorAll(".gallery-item");
 
@@ -11,16 +9,18 @@ if (gallery) {
     const img = item.querySelector("img");
 
     if (img) {
-      // For images: get aspect ratio from width/height attributes
+      // Fill the layout box and crop overflow (removes YouTube letterboxing, etc.)
       img.style.width = "100%";
-      img.style.height = "auto";
+      img.style.height = "100%";
+      img.style.objectFit = "cover";
+      img.style.objectPosition = "center";
       return parseFloat(img.getAttribute("width")) / parseFloat(img.getAttribute("height"));
     } else {
       // For videos or items without img: parse aspect ratio from style attribute
       const aspectRatioStyle = item.style.aspectRatio || item.getAttribute("style")?.match(/aspect-ratio:\s*([\d.]+)\s*\/\s*([\d.]+)/);
       if (aspectRatioStyle) {
-        if (typeof aspectRatioStyle === 'string' && aspectRatioStyle.includes('/')) {
-          const [width, height] = aspectRatioStyle.split('/').map(parseFloat);
+        if (typeof aspectRatioStyle === "string" && aspectRatioStyle.includes("/")) {
+          const [width, height] = aspectRatioStyle.split("/").map(parseFloat);
           return width / height;
         } else if (Array.isArray(aspectRatioStyle)) {
           return parseFloat(aspectRatioStyle[1]) / parseFloat(aspectRatioStyle[2]);
@@ -54,7 +54,7 @@ if (gallery) {
 
     gallery.style.position = "relative";
     gallery.style.height = layout.containerHeight + "px";
-    gallery.style.visibility = "";
+    gallery.classList.remove("gallery-grid--pending");
   }
 
   window.addEventListener("resize", updateGallery);
@@ -63,4 +63,6 @@ if (gallery) {
   // Call twice to adjust for scrollbars appearing after first call
   updateGallery();
   updateGallery();
-}
+};
+
+document.querySelectorAll(".gallery-grid").forEach(initGallery);
