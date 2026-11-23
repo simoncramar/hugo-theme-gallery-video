@@ -12,6 +12,10 @@ if (toggle && menu) {
     menu.setAttribute("aria-hidden", String(!open));
     document.body.classList.toggle("menu-open", open);
 
+    if (open) {
+      document.dispatchEvent(new CustomEvent("menu:open"));
+    }
+
     if (!backdrop) return;
 
     if (open) {
@@ -42,6 +46,8 @@ if (toggle && menu) {
       close();
     }
   });
+
+  document.addEventListener("filters:open", close);
 
   menu.querySelectorAll("a").forEach((link) => {
     link.addEventListener("click", close);
